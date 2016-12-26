@@ -1,0 +1,103 @@
+
+#ifdef SPARK
+  #include "ThingSpeak/ThingSpeak.h"
+#else
+  #include "ThingSpeak.h"
+#endif
+
+
+//#define USE_WIFI_SHIELD
+#ifdef ARDUINO_ARCH_AVR
+
+  #ifdef ARDUINO_AVR_YUN
+    #include "YunClient.h"
+    YunClient client;
+  #else
+
+    #ifdef USE_WIFI_SHIELD
+      #include <SPI.h>
+      // ESP8266 USERS -- YOU MUST COMMENT OUT THE LINE BELOW.  There's a bug in the Arduino IDE that causes it to not respect #ifdef when it comes to #includes
+      // If you get "multiple definition of `WiFi'" -- comment out the line below.
+      #include <WiFi.h>
+      char ssid[] = "<YOURNETWORK>";          //  your network SSID (name) 
+      char pass[] = "<YOURPASSWORD>";   // your network password
+      int status = WL_IDLE_STATUS;
+      WiFiClient  client;
+    #else
+      // Use wired ethernet shield
+      #include <SPI.h>
+      #include <Ethernet.h>
+      byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
+      EthernetClient client;
+    #endif
+  #endif
+#endif
+
+#ifdef ARDUINO_ARCH_ESP8266
+  #include <ESP8266WiFi.h>
+  char ssid[] = "<YOURNETWORK>";          //  your network SSID (name) 
+  char pass[] = "<YOURPASSWORD>";   // your network password
+  int status = WL_IDLE_STATUS;
+  WiFiClient  client;
+#endif
+
+#ifdef SPARK
+  TCPClient client;
+#endif
+
+
+
+unsigned long myChannelNumber = 1376559;
+const char * myReadAPIKey = "G810ZKP2L5FRP65IFC";
+
+void setup() {
+  pinMode(7,OUTPUT);
+  pinMode(6,OUTPUT);
+  pinMode(5,OUTPUT);
+  #if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_ESP8266)
+    Serial.begin(9600);
+    #ifdef ARDUINO_AVR_YUN
+      Bridge.begin();
+    #else
+      #if defined(USE_WIFI_SHIELD) || defined(ARDUINO_ARCH_ESP8266)
+        WiFi.begin(ssid, pass);
+      #else
+        Ethernet.begin(mac);
+      #endif
+    #endif
+  #endif
+
+  ThingSpeak.begin(client);
+}
+
+void loop() {
+  // Read the latest value from field 1 of channel 31461
+  float voltage = ThingSpeak.readFloatField(myChannelNumber, 1, myReadAPIKey);
+  #if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_ESP8266)
+    Serial.print("Latest voltage is: "); 
+    Serial.print(voltage);
+    Serial.println("V"); 
+  #endif
+  #ifdef SPARK
+    Particle.publish("thingspeak-readvoltage", "Latest voltage is: " + String(voltage) + "V",60,PRIVATE);
+  #endif
+  delay(3000);
+  if(voltage==5){
+    digitalWrite(7,HIGH);   // 1st led on
+    delay(100);
+  
+  }
+   else if(voltage==0){
+    digitalWrite(6,HIGH);    //2nd led on
+    delay(100);
+  }
+  else if(voltage==3){
+    digitalWrite(5,HIGH);    //2nd led on
+    delay(100);
+  }
+  else if(voltage==8) {
+    digitalWrite(7,LOW);
+    digitalWrite(6,LOW);
+    digitalWrite(5,LOW);
+  }
+}
