@@ -1,0 +1,7 @@
+Have you ever thought of controlling any devices by just tweeting .....?
+Here is the project by which you can control your home or office appliances by just tweeting.
+Just tweet and see the magic.............
+
+I have used an Arduino with ethernet shield to connect the devices with the internet.
+Here I am using ThingSpeak(an IOT platform) which has an amazing app called Tweet Control, it provides us the API keys 
+which would be placed in the arduino code.
